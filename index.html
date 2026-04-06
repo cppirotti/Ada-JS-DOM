@@ -1,73 +1,106 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-  </head>
-  <body>
-    <!-- Interno -->
-    <!-- <script>
-        alert("Hello world!");
-    </script> -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Bancário Pro</title>   
+    <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+    <header>
+        <h1>Sistema Bancário <span class="destaque">Pro</span></h1>
+        <button id="theme-toggle">Modo claro/escuro</button>
+    </header>
 
-    <!-- getElementById -->
-    <h1 id="titulo">Frontend Dinâmico - JS DOM</h1>
-    <h2 id="subtitulo">Aula 01</h2>
+    <div id="toast" class="toast"></div>
 
-    <!-- getElementsByClassName -->
-    <ul>
-      <li class="item">Item 1</li>
-      <li class="item">Item 2</li>
-      <li class="item">Item 3</li>
-      <li class="item">Item 4</li>
-    </ul>
+    <!-- Navegação em abas -->
+    <div class="container">
+        <nav class="tabs-nav">
+            <button class="tab-btn active" onclick="openTab(event, 'aba-clientes')">Clientes</button>
+            <button class="tab-btn" onclick="openTab(event, 'aba-contas')">Contas</button>
+            <button class="tab-btn" onclick="openTab(event, 'aba-transacoes')">Transações</button>
+        </nav>
 
-    <!-- getElementsByTagName -->
-    <ol>
-      <li>Item 1</li>
-      <li>Item 2</li>
-      <li>Item 3</li>
-      <li>Item 4</li>
-      <li>Item 5</li>
-    </ol>
+    <main class="container">
+        <!-- Gestão de Clientes -->
+        <section id="aba-clientes" class="tab-content active">
+            <h2>Gestão de Clientes</h2>
+            <form id="form-cliente">
+                <input type="hidden" id="cliente-id">
+                <input type="text" id="cliente-nome" placeholder="Nome Completo">
+                <input type="text" id="cliente-cpf" placeholder="CPF (000.000.000-00)" maxlength="14">
+                <input type="email" id="cliente-email" placeholder="E-mail">
+                <button type="submit">Salvar Cliente</button>
+            </form>
+            <input type="text" id="filtro-cliente" placeholder="Filtrar por nome..." class="search-input">
+            <div class="table-responsive">
+                <table id="tabela-clientes">
+                    <thead>
+                        <tr><th>Nome</th><th>CPF</th><th>Email</th><th>Ações</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
 
-    <!-- querySelector -->
-    <p class="paragrafo">
-      Lorem ipsum dolor sit amet consectetur adipisicing elit. Enim debitis
-      cumque sit sed placeat obcaecati, illum nihil nostrum laborum inventore
-      rem tempora magnam! Aperiam iusto optio, quia doloremque alias error.
-    </p>
+        <!-- Gestão de Contas -->
+        <section id="aba-contas" class="tab-content">
+            <h2>Gestão de Contas</h2>
+            <form id="form-conta">
+                <select id="conta-clienteId"><option value="">Selecione um Cliente</option></select>
+                <select id="conta-tipo">
+                    <option value="Corrente">Corrente</option>
+                    <option value="Poupança">Poupança</option>
+                </select>
+                <button type="submit">Criar Conta</button>
+            </form>
+            <div class="table-responsive">
+                <table id="tabela-contas">
+                    <thead>
+                        <tr><th>Conta</th><th>Cliente</th><th>CPF</th><th>Tipo</th><th>Saldo</th><th>Status</th><th>Ações</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
 
-    <section id="paragrafos">
-      <article class="paragrafo">
-        Lorem ipsum dolor sit, amet consectetur adipisicing elit. Recusandae
-        modi perspiciatis optio eveniet voluptatem minus laboriosam! Similique
-        dolorem quibusdam voluptatum nostrum, ducimus sunt, commodi harum ab
-        eligendi sapiente adipisci nihil?
-      </article>
-      <article class="paragrafo">
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Ipsa
-        praesentium itaque illo nam, optio cupiditate placeat ipsam in earum
-        ullam aliquid nisi molestiae repellat quis, blanditiis, natus soluta!
-        Ratione, perspiciatis.
-      </article>
-      <article class="paragrafo">
-        Lorem ipsum dolor, sit amet consectetur adipisicing elit. Incidunt eum
-        animi odit quidem sit molestiae asperiores voluptatum sed odio
-        necessitatibus. Minima quis vel aspernatur alias obcaecati accusantium
-        iste qui incidunt.
-      </article>
-    </section>
+        <!-- Transações -->
+        <section id="aba-transacoes" class="tab-content">
+            <h2>Transações</h2>
+            <form id="form-transacao">
+                <select id="transacao-conta"><option value="">Selecione a Conta</option></select>
+                <select id="transacao-tipo">
+                    <option value="Depósito">Depósito</option>
+                    <option value="Saque">Saque</option>
+                </select>
+                <input type="number" id="transacao-valor" placeholder="Valor R$" step="0.01">
+                <button type="submit">Confirmar</button>
+            </form>
+            <h3>Histórico</h3>
+            <div class="table-responsive">
+                <table id="tabela-transacoes">
+                    <thead>
+                        <tr><th>Data</th><th>Conta</th><th>Tipo</th><th>Valor</th><th>Saldo Final</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="paginacao">
+                <button id="btn-prev">⬅️</button>
+                <span id="page-info">Página 1</span>
+                <button id="btn-next">➡️</button>
+            </div>
+        </section>
+    </main>
+    </div>
 
-    <pre>
-        &lt;div&gt;
-            &lt;h1&gt;Olá Mundo&lt;/h1&gt;
-            &lt;p&gt;Este é um parágrafo.&lt;/p&gt;
-        &lt;/div&gt;
-    </pre>
 
-    <!-- Externo -->
-    <script src="scripts.js"></script>
-  </body>
+    <!-- importação dos scripts -->
+    <!-- API e Validação primeiro, UI depois, Main por último -->
+    <script src="js/api.js"></script>
+    <script src="js/validacao.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+</body>
 </html>
