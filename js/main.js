@@ -1,4 +1,10 @@
-let appData = { clientes: [], contas: [], transacoes: [], page: 1 };
+let appData = { 
+    clientes: [], 
+    contas: [], 
+    transacoes: [], 
+    page: 1,
+    filtroContaId: "" // Nova variável para o filtro
+};
 
 // CARREGAR E RENDERIZAR
 async function loadAll() {
@@ -12,6 +18,26 @@ async function loadAll() {
         console.error(error);
     }
 }
+
+// FORMATO MOEDA EM REAIS BRL
+const formatarMoedaParaTabela = (valor) => {
+    // Formata o número "1.234,56"
+    const partes = new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(valor || 0).split(',');
+
+    const inteiro = partes[0];
+    const decimal = partes[1];
+
+    // Retorna o HTML estrutura
+    return `
+        <div class="valor-celula">
+            <span class="valor-inteiro">R$ ${inteiro}</span>
+            <span class="valor-decimal">,${decimal}</span>
+        </div>
+    `;
+};
 
 function refreshUI() {
     // Renderiza a Tabela de Clientes
@@ -31,32 +57,48 @@ function refreshUI() {
         return cli ? cli.cpf : 'N/A';
     },
     'tipo', 
-    (c) => `R$ ${parseFloat(c.saldo).toFixed(2)}`, 
+    (c) => formatarMoedaParaTabela(c.saldo), 
     'status'
 ], (item) => `
     <button class="btn-blue" onclick="toggleStatus('${item.id}')">${item.status === 'Ativa' ? 'Inativar' : 'Ativar'}</button>
     <button style="background:#dc3545" onclick="handleDelConta('${item.id}')">Excluir</button>
 `);
                   
-    // Renderiza a Tabela de Transações (Com paginação de 5 em 5)
+    // Renderiza a Tabela de Transações
+    // Filtragem de Transações
+    let transacoesFiltradas = [...appData.transacoes];
+    if (appData.filtroContaId) {
+        transacoesFiltradas = transacoesFiltradas.filter(t => 
+            String(t.contaId) === String(appData.filtroContaId)
+        );
+    }
+
+    // Paginação baseada nos dados filtrados
     const start = (appData.page - 1) * 5;
-    const paginated = [...appData.transacoes].reverse().slice(start, start + 5);
+    const paginated = transacoesFiltradas.reverse().slice(start, start + 5);
     
+    // Renderiza Tabela de Histórico de Transações
     ui.renderTable('tabela-transacoes', paginated, [
         'data', 
         (t) => {
             const c = appData.contas.find(conta => String(conta.id) === String(t.contaId));
-            return c ? c.numero : t.contaId;
+            return c ? `Conta ${c.numero}` : 'N/A';
         }, 
         'tipo', 
-        (t) => `R$ ${parseFloat(t.valor).toFixed(2)}`, 
-        (t) => `R$ ${parseFloat(t.novoSaldo).toFixed(2)}`
+        (t) => formatarMoedaParaTabela(t.valor),
+        (t) => formatarMoedaParaTabela(t.novoSaldo),
     ]);
+
+    // Select de Filtro Nova Transação (apenas contas Ativas)
+    const contasAtivas = appData.contas.filter(c => c.status === 'Ativa');
+    ui.fillSelect('transacao-conta', contasAtivas, 'numero', 'id', 'Selecione a Conta...');
     
-    // atualiza os selects para que os novos clientes/contas apareçam na hora
-    ui.fillSelect('conta-clienteId', appData.clientes, 'nome');
-    ui.fillSelect('transacao-conta', appData.contas.filter(c => c.status === 'Ativa'), 'numero');
+    // Select de Filtro de Conta na Tabela de Transações
+    ui.fillSelect('filtro-transacao-conta', appData.contas, 'numero', 'id', 'Todas as Contas');
     
+    // Manter o valor selecionado após o refresh
+    document.getElementById('filtro-transacao-conta').value = appData.filtroContaId;
+
     document.getElementById('page-info').textContent = `Página ${appData.page}`;
 }
 
@@ -125,40 +167,58 @@ document.getElementById('form-conta').addEventListener('submit', async (e) => {
 // REALIZAR TRANSAÇÃO
 document.getElementById('form-transacao').addEventListener('submit', async (e) => {
     e.preventDefault();
+    
+    const btnConfirmar = e.target.querySelector('button[type="submit"]');
     const contaId = document.getElementById('transacao-conta').value;
     const valor = parseFloat(document.getElementById('transacao-valor').value);
     const tipo = document.getElementById('transacao-tipo').value;
     
     if (!contaId) return ui.showToast("Selecione uma conta.", "error");
-    if (isNaN(valor)) return ui.showToast("Digite um valor numérico válido.", "error");
+    if (isNaN(valor) || valor <= 0) return ui.showToast("Digite um valor válido.", "error");
 
-    // Localiza a conta completa pelo ID para pegar o saldo atual
     const conta = appData.contas.find(c => String(c.id) === String(contaId));
-    
     const erro = validar.transacao(tipo, valor, conta.saldo);
     if(erro) return ui.showToast(erro, 'error');
 
-    // Regra: Somar se for depósito, subtrair se for saque
+    // Desabilita o botão temporariamente para evitar cliques duplos
+    btnConfirmar.disabled = true;
+    btnConfirmar.innerText = "Processando...";
+
     const novoSaldo = tipo === 'Depósito' ? conta.saldo + valor : conta.saldo - valor;
     
     try {
-        // Passo 1: Atualizar o saldo da conta no db.json
+        // Passo 1: Atualizar o saldo da conta
         await api.put(`/contas/${conta.id}`, { ...conta, saldo: novoSaldo });
         
-        // Passo 2: Registrar o histórico na tabela transações no db.json
+        // Passo 2: Registrar o histórico
         await api.post('/transacoes', { 
             contaId: isNaN(contaId) ? contaId : Number(contaId), 
             tipo, 
             valor, 
             novoSaldo, 
-            data: new Date().toISOString().split('T')[0] // Formata a data para YYYY-MM-DD
+            data: new Date().toISOString().split('T')[0]
         });
 
         ui.showToast("Transação realizada com sucesso!");
+        
+        // Limpa o formulário
         e.target.reset();
-        await loadAll(); // Atualiza os saldos nas tabelas e no histórico
+
+        // Atualiza os dados (isso vai rodar o refreshUI internamente)
+        await loadAll(); 
+
+        // GARANTIA: Força a aba de transações a continuar ativa (caso o refreshUI resete algo)
+        // Não usamos o .click() aqui para não gerar loop, apenas garantimos a classe.
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('aba-transacoes').classList.add('active');
+        document.querySelector('[onclick*="aba-transacoes"]').classList.add('active');
+
     } catch (err) {
         ui.showToast("Erro ao realizar a transação.", "error");
+    } finally {
+        btnConfirmar.disabled = false;
+        btnConfirmar.innerText = "Confirmar";
     }
 });
 
@@ -171,7 +231,7 @@ window.handleEditCliente = (id) => {
         document.getElementById('cliente-nome').value = cliente.nome;
         document.getElementById('cliente-cpf').value = cliente.cpf;
         document.getElementById('cliente-email').value = cliente.email;
-        // Rola a página para cima suavemente
+        // Rolar a página para cima suavemente
         //window.scrollTo({ top: 0, behavior: 'smooth' }); 
         
         //opção para forçar a abertura da aba clientes depois que mudei a navegação de rolagem para navegação em abas
@@ -192,30 +252,7 @@ window.handleDelCliente = async (id) => {
     }
 };
 
-window.toggleStatus = async (id) => {
-    const conta = appData.contas.find(c => String(c.id) === String(id));
-    try {
-        await api.put(`/contas/${id}`, { ...conta, status: conta.status === 'Ativa' ? 'Inativa' : 'Ativa' });
-        ui.showToast("Status da conta atualizado!");
-        await loadAll();
-    } catch(err) {
-        ui.showToast("Erro ao atualizar status.", "error");
-    }
-};
-
-window.handleDelConta = async (id) => {
-    if(confirm("Deseja realmente excluir esta conta?")) {
-        try {
-            await api.delete(`/contas/${id}`);
-            ui.showToast("Conta excluída!", "success");
-            await loadAll();
-        } catch(err) {
-            ui.showToast("Erro ao excluir a conta.", "error");
-        }
-    }
-};
-
-// PAGINAÇÃO E INICIALIZAÇÃO
+// PAGINAÇÃO
 document.getElementById('btn-prev').onclick = () => {
     if(appData.page > 1) { appData.page--; refreshUI(); }
 };
@@ -225,70 +262,84 @@ document.getElementById('btn-next').onclick = () => {
     if(appData.page < totalPages) { appData.page++; refreshUI(); }
 };
 
+// NAVEGAÇÃO ENTRE ABAS
+window.openTab = function(event, tabId) {
+    const contents = document.querySelectorAll('.tab-content');
+    contents.forEach(content => content.classList.remove('active'));
+
+    const buttons = document.querySelectorAll('.tab-btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+
+    document.getElementById(tabId).classList.add('active');
+    
+    if (event) {
+        event.currentTarget.classList.add('active');
+    } else {
+        document.querySelector(`[onclick*="${tabId}"]`).classList.add('active');
+    }
+
+    localStorage.setItem('activeTab', tabId);
+    refreshUI();
+};
+
+// INICIALIZAÇÃO
 document.addEventListener('DOMContentLoaded', () => {
     loadAll();
     
+    // Recuperar a última aba aberta
+    const lastTab = localStorage.getItem('activeTab') || 'aba-clientes';
+    openTab(null, lastTab);
+    
     // Configuração do Tema Dark/Light
-    if(localStorage.getItem('theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
+    if(localStorage.getItem('theme') === 'dark') {
+        document.body.setAttribute('data-theme', 'dark');
+    }
+    
     document.getElementById('theme-toggle').onclick = () => {
         const isDark = document.body.hasAttribute('data-theme');
+        
         if (isDark) {
             document.body.removeAttribute('data-theme');
             localStorage.setItem('theme', 'light');
         } else {
+            // Volta a usar o setAttribute para garantir que o valor "dark" seja escrito
             document.body.setAttribute('data-theme', 'dark');
             localStorage.setItem('theme', 'dark');
         }
     };
 });
 
-// FILTRO DE CLIENTES EM TEMPO REAL
+// FILTROS (Clientes e Transações)
 document.getElementById('filtro-cliente').addEventListener('input', (e) => {
-    
-    // transforma em minúsculo
     const termoDigitado = e.target.value.toLowerCase();
-    
-    // filtra a lista original de clientes
     const clientesFiltrados = appData.clientes.filter(cliente => 
         cliente.nome.toLowerCase().includes(termoDigitado)
     );
-    
-    // pede para a UI redesenhar APENAS a tabela de clientes com a nova lista filtrada
     ui.renderTable('tabela-clientes', clientesFiltrados, ['nome', 'cpf', 'email'], 
         (item) => `<button class="btn-blue" onclick="handleEditCliente('${item.id}')">Editar</button> 
                    <button style="background:#dc3545" onclick="handleDelCliente('${item.id}')">Excluir</button>`);
 });
 
-// MÁSCARA DE CPF AUTOMÁTICA 
+// Máscara de CPF
 document.getElementById('cliente-cpf').addEventListener('input', (e) => {
-    // Remove tudo que não é número
     let v = e.target.value.replace(/\D/g, ""); 
-    
-    // Corta qualquer coisa que passe de 11 dígitos 
     if (v.length > 11) v = v.slice(0, 11);
-    
-    // Aplica a formatação apenas se houver números
-    v = v.replace(/(\d{3})(\d)/, "$1.$2");       // Primeiro ponto
-    v = v.replace(/(\d{3})(\d)/, "$1.$2");       // Segundo ponto
-    v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2"); // Hífen
-    
+    v = v.replace(/(\d{3})(\d)/, "$1.$2");
+    v = v.replace(/(\d{3})(\d)/, "$1.$2");
+    v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
     e.target.value = v; 
 });
 
-// FUNÇÃO PARA NAVEGAÇÃO ENTRE ABAS
-window.openTab = function(event, tabId) {
-    // Esconder todos os conteúdos das abas
-    const contents = document.querySelectorAll('.tab-content');
-    contents.forEach(content => content.classList.remove('active'));
-
-    // Desativa os botões
-    const buttons = document.querySelectorAll('.tab-btn');
-    buttons.forEach(btn => btn.classList.remove('active'));
-
-    // Ativa aba e botão atual
-    document.getElementById(tabId).classList.add('active');
-    event.currentTarget.classList.add('active');
-
-    // Garantir que os dados estão atualizados quando trocar de aba
+// Filtros da Tabela de Transações
+document.getElementById('filtro-transacao-conta').addEventListener('change', (e) => {
+    appData.filtroContaId = e.target.value;
+    appData.page = 1; 
     refreshUI();
-};
+});
+
+document.getElementById('btn-limpar-filtro').addEventListener('click', () => {
+    appData.filtroContaId = "";
+    document.getElementById('filtro-transacao-conta').value = "";
+    appData.page = 1;
+    refreshUI();
+});

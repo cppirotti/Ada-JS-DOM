@@ -26,7 +26,7 @@
       "numero": 3223,
       "clienteId": "zf59KuTMHpM",
       "tipo": "Corrente",
-      "saldo": 110,
+      "saldo": 88224,
       "status": "Ativa",
       "id": "24SCksGy86M"
     }
@@ -63,6 +63,70 @@
       "novoSaldo": 110,
       "data": "2026-04-06",
       "id": "ccywfS41jbk"
+    },
+    {
+      "contaId": "24SCksGy86M",
+      "tipo": "Saque",
+      "valor": 50,
+      "novoSaldo": 60,
+      "data": "2026-04-06",
+      "id": "8ffFB5hPf9A"
+    },
+    {
+      "contaId": "24SCksGy86M",
+      "tipo": "Depósito",
+      "valor": 200,
+      "novoSaldo": 260,
+      "data": "2026-04-06",
+      "id": "Ot7fy99nri0"
+    },
+    {
+      "contaId": "24SCksGy86M",
+      "tipo": "Saque",
+      "valor": 200,
+      "novoSaldo": 60,
+      "data": "2026-04-06",
+      "id": "fva2d04e9vs"
+    },
+    {
+      "contaId": "24SCksGy86M",
+      "tipo": "Depósito",
+      "valor": 78,
+      "novoSaldo": 138,
+      "data": "2026-04-06",
+      "id": "KpnRNDGu4pg"
+    },
+    {
+      "contaId": "24SCksGy86M",
+      "tipo": "Depósito",
+      "valor": 100000,
+      "novoSaldo": 100138,
+      "data": "2026-04-06",
+      "id": "Vs9Btp1-hH0"
+    },
+    {
+      "contaId": "24SCksGy86M",
+      "tipo": "Saque",
+      "valor": 10000,
+      "novoSaldo": 90138,
+      "data": "2026-04-06",
+      "id": "nDHe1i_XEmc"
+    },
+    {
+      "contaId": "24SCksGy86M",
+      "tipo": "Depósito",
+      "valor": 87,
+      "novoSaldo": 90225,
+      "data": "2026-04-06",
+      "id": "4OH0DycColI"
+    },
+    {
+      "contaId": "24SCksGy86M",
+      "tipo": "Saque",
+      "valor": 2001,
+      "novoSaldo": 88224,
+      "data": "2026-04-06",
+      "id": "AJrxZjgjeBM"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

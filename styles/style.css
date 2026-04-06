@@ -273,3 +273,42 @@ section h2 {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Container do valor para alinhar pela vírgula */
+.valor-celula {
+    display: inline-flex;
+    justify-content: flex-start;
+    /* Usamos uma fonte mono que tenha boa leitura em ambos os modos */
+    font-family: 'Consolas', 'Courier New', monospace; 
+    width: 100%;
+    /* Garante que herde a cor do tema (claro ou escuro) */
+    color: var(--text); 
+}
+
+/* Parte inteira: alinha à direita para "encostar" na vírgula */
+.valor-inteiro {
+    display: inline-block;
+    width: 130px; /* Aumentei um pouco para valores maiores */
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Parte decimal: alinha à esquerda */
+.valor-decimal {
+    display: inline-block;
+    text-align: left;
+    /* Deixa os centavos levemente mais discretos, se desejar */
+    opacity: 0.9; 
+}
+
+/* --- AJUSTE ESPECÍFICO PARA DARK MODE --- */
+[data-theme="dark"] .valor-celula {
+    /* No modo escuro, uma cor levemente mais clara que o branco puro 
+       ajuda na leitura sobre o fundo cinza escuro */
+    color: #f4f6f8; 
+}
+
+/* Ajuste para as tabelas no Dark Mode não perderem o contraste */
+[data-theme="dark"] td {
+    border-bottom: 1px solid #333;
+}

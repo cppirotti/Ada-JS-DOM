@@ -18,6 +18,7 @@ const ui = {
 
     fillSelect(id, data, textKey, valueKey = 'id') {
         const select = document.getElementById(id);
+        if (!select) return;
         const options = data.map(item => `<option value="${item[valueKey]}">${item[textKey]}</option>`);
         select.innerHTML = '<option value="">Selecione...</option>' + options.join('');
     }

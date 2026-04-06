@@ -77,6 +77,20 @@
                 <input type="number" id="transacao-valor" placeholder="Valor R$" step="0.01">
                 <button type="submit">Confirmar</button>
             </form>
+            
+            <div class="filter-group" style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+                <label for="filtro-transacao-conta">Filtrar por Conta:</label>
+                <select id="filtro-transacao-conta" style="max-width: 200px;">
+                    <option value="">Todas as Contas</option>
+                    </select>
+                <button class="btn-small" id="btn-limpar-filtro" style="background: var(--bg-tab-inactive); color: var(--text);">Limpar</button>
+            </div>
+
+            <div class="table-responsive">
+                <table id="tabela-transacoes">
+                    </table>
+            </div>
+            
             <h3>Histórico</h3>
             <div class="table-responsive">
                 <table id="tabela-transacoes">
